@@ -1,0 +1,83 @@
+type Account = record { owner : principal; subaccount : opt vec nat8 };
+type Hangman = record {
+  found : text;
+  tries : nat;
+  word : text;
+  cagnote : nat;
+  update : nat64;
+};
+type Infos = record {
+  found : text;
+  cagnote : nat;
+  update : nat64;
+  wallet : nat;
+};
+type InitArgs = record {
+  fee : nat;
+  decimals : nat8;
+  metadata : vec record { text; Value };
+  minting_account : opt Account;
+  name : text;
+  transaction_window_nanos : opt nat64;
+  permitted_drift_nanos : opt nat64;
+  supported_standards : vec SupportedStandard;
+  symbol : text;
+  initial_account_balances : vec InitialAccountBalance;
+};
+type InitialAccountBalance = record { balance : nat; account : Account };
+type SupportedStandard = record { url : text; name : text };
+type TransferArgs = record {
+  to : Account;
+  fee : opt nat;
+  memo : opt vec nat8;
+  from_subaccount : opt vec nat8;
+  created_at_time : opt nat64;
+  amount : nat;
+};
+type TransferError = variant {
+  GenericError : _InlineTransferErrorGenericError;
+  TemporarilyUnavailable;
+  BadBurn : _InlineTransferErrorBadBurn;
+  Duplicate : _InlineTransferErrorDuplicate;
+  BadFee : _InlineTransferErrorBadFee;
+  CreatedInFuture : _InlineTransferErrorCreatedInFuture;
+  TooOld;
+  InsufficientFunds : _InlineTransferErrorInsufficientFunds;
+};
+type TransferResult = variant { Ok : nat; Err : TransferError };
+type User = record { age : nat; balance : nat; name : text };
+type Value = variant { Int : int; Nat : nat; Blob : vec nat8; Text : text };
+type _InlineTransferErrorBadBurn = record { min_burn_amount : nat };
+type _InlineTransferErrorBadFee = record { expected_fee : nat };
+type _InlineTransferErrorCreatedInFuture = record { ledger_time : nat64 };
+type _InlineTransferErrorDuplicate = record { duplicate_of : nat };
+type _InlineTransferErrorGenericError = record {
+  message : text;
+  error_code : nat;
+};
+type _InlineTransferErrorInsufficientFunds = record { balance : nat };
+service : () -> {
+  add : (nat) -> (nat);
+  get : () -> (nat) query;
+  hangman_get : (principal) -> (Infos);
+  hangman_get_wallet : (principal) -> (nat) query;
+  hangman_submit : (text, principal) -> (nat8);
+  hangman_vote : (principal, nat8) -> ();
+  icrc1_balance_of : (Account) -> (nat) query;
+  icrc1_burn : (TransferArgs) -> (TransferResult);
+  icrc1_decimals : () -> (nat8) query;
+  icrc1_fee : () -> (nat) query;
+  icrc1_mint : (TransferArgs) -> (TransferResult);
+  icrc1_minting_account : () -> (opt Account) query;
+  icrc1_name : () -> (text) query;
+  icrc1_symbol : () -> (text) query;
+  icrc1_total_supply : () -> (nat) query;
+  icrc1_transfer : (TransferArgs) -> (TransferResult);
+  icrc1_transfer_from : (TransferArgs, Account) -> (TransferResult);
+  inc : () -> (nat);
+  init : (InitArgs) -> ();
+  initgame : () -> (Hangman);
+  user_add : (principal, text, nat) -> ();
+  user_exist : (principal) -> (nat8) query;
+  user_get : (principal) -> (User) query;
+}
